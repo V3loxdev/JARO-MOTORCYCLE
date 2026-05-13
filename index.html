@@ -110,9 +110,12 @@
             </div>
 
             <div class="container mx-auto mt-4">
-                <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-2">
                     <button onclick="setAdminModule('inventory')" id="tab-inventory" class="admin-tab bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition">Inventory</button>
                     <button onclick="setAdminModule('sales')" id="tab-sales" class="admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition">Sales</button>
+                    <button onclick="setAdminModule('installments')" id="tab-installments" class="admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition">Installments</button>
+                    <button onclick="setAdminModule('customers')" id="tab-customers" class="admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition">Customers</button>
+
                     <button onclick="setAdminModule('employees')" id="tab-employees" class="admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition">Employees</button>
                     <button onclick="setAdminModule('payroll')" id="tab-payroll" class="admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition">Payroll</button>
                 </div>
@@ -184,16 +187,242 @@
                 </div>
 
                 <div class="bg-white p-6 rounded-xl shadow border border-gray-100 mb-6">
-                    <h4 class="font-black text-gray-800 mb-4">Record Sale</h4>
+                    <h4 class="font-black text-gray-800 mb-4">Record Deal</h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <select id="sale-form-unit" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none"></select>
+
+                        <div class="md:col-span-1">
+                            <input id="sale-form-price" placeholder="Cash Price" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
+                        </div>
+
+                        <div class="md:col-span-1">
+                            <input id="sale-form-dp" placeholder="DP" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
+                        </div>
+
+                        <select id="sale-form-payment-type" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-1">
+                            <option value="Installment" selected>Installment</option>
+                            <option value="Full Payment Cash">Full Payment Cash</option>
+                        </select>
+
+                        <input id="sale-form-installment-term-months" type="number" min="1" step="1" placeholder="Installment Term (months)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-1" value="6" />
+
+                        <input id="sale-form-customer-name" placeholder="Customer Full Name" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-2" type="text">
+                        <input id="sale-form-customer-contact" placeholder="Customer Contact (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-1" type="text">
+                        <input id="sale-form-customer-address" placeholder="Customer Address (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-2" type="text">
+
+                        <button onclick="saveDeal()" class="bg-blue-600 text-white text-[10px] px-4 py-3 rounded-lg font-bold md:col-span-1">Save Deal</button>
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-3">On save, unit will be set to Unavailable and a receipt will be marked as DONE (with done date) and stored in history.</p>
+                </div>
+
+                <div id="receipt-modal" class="hidden fixed inset-0 z-[60] bg-black/60">
+                    <div class="flex items-center justify-center h-full px-4">
+                        <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl border border-gray-200 overflow-hidden p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <div class="font-black uppercase tracking-widest text-sm text-blue-950">RECEIPT (DONE DEAL)</div>
+                                    <div class="text-[11px] text-gray-500">Auto-generated per sale. (History supported)</div>
+                                </div>
+                                <button onclick="closeReceiptModal()" class="text-gray-600 hover:text-gray-900 font-bold">✕</button>
+                            </div>
+
+                            <!-- Monospace receipt design -->
+                            <div class="receipt" id="receipt">
+                                <h2>MY STORE</h2>
+                                <p id="receipt-date"></p>
+                                <div class="line"></div>
+                                <div class="items" id="receipt-items"></div>
+                                <div class="line"></div>
+                                <div class="total" id="receipt-total"></div>
+                                <div class="line"></div>
+                                <div class="footer">
+                                    <p>Thank you for shopping!</p>
+                                    <p>Receipt #: <span id="receipt-no"></span></p>
+                                </div>
+
+                                <div class="mt-4 text-[11px] text-gray-600 leading-relaxed">
+                                    <div><b>Customer:</b> <span id="receipt-customer"></span></div>
+                                    <div><b>Payment Type:</b> <span id="receipt-payment"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sales Module -->
+            <section id="module-sales" class="admin-module hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-black uppercase tracking-tighter text-gray-800">Sales Records</h3>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow border border-gray-100 mb-6">
+                    <h4 class="font-black text-gray-800 mb-4">Record Deal</h4>
+                    
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <select id="sale-form-unit" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none"></select>
                         <input id="sale-form-price" placeholder="Cash Price" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
                         <input id="sale-form-dp" placeholder="DP" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
-                        <input id="sale-form-buyer" placeholder="Buyer Name (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-2" type="text">
-                        <button onclick="saveSale()" class="bg-blue-600 text-white text-[10px] px-4 py-3 rounded-lg font-bold">Save Sale</button>
+                        <select id="sale-form-payment-type" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none">
+                            <option value="Installment" selected>Installment</option>
+                            <option value="Full Payment Cash">Full Payment Cash</option>
+                        </select>
+                        <input id="sale-form-customer-name" placeholder="Customer Full Name" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-2" type="text">
+                        <input id="sale-form-customer-contact" placeholder="Customer Contact (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="text">
+                        <input id="sale-form-customer-address" placeholder="Customer Address (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-3" type="text">
+                        <button onclick="saveDeal()" class="bg-blue-600 text-white text-[10px] px-4 py-3 rounded-lg font-bold md:col-span-3">Save Deal</button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-3">When you save a sale, unit status will be set to Unavailable (and saved in Sales records).</p>
+
+                    <p class="text-xs text-gray-500 mt-3">On save, unit will be set to Unavailable and a receipt will be marked as DONE (with done date) and stored in history.</p>
                 </div>
+
+                <div id="receipt-modal" class="hidden fixed inset-0 z-[60] bg-black/60">
+                    <div class="flex items-center justify-center h-full px-4">
+                        <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                            <div class="bg-blue-950 text-white p-4 flex items-center justify-between">
+                                <div class="font-black uppercase tracking-widest text-sm">RECEIPT (DONE DEAL)</div>
+                                <button onclick="closeReceiptModal()" class="text-white/80 hover:text-white font-bold">✕</button>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Receipt ID</span><span id="rcpt-id" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Customer</span><span id="rcpt-customer" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Unit</span><span id="rcpt-unit" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Payment Type</span><span id="rcpt-payment" class="font-black text-gray-900"></span></div>
+                                </div>
+
+                                <div class="mt-5 border-t pt-4 space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Cash Price</span><span id="rcpt-price" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">DP</span><span id="rcpt-dp" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">TOTAL</span><span id="rcpt-total" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Done Date</span><span id="rcpt-date" class="font-black text-gray-900"></span></div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button onclick="closeReceiptModal()" class="bg-blue-600 text-white text-[10px] px-4 py-2 rounded-lg font-bold">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sales Module -->
+            <section id="module-sales" class="admin-module hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-black uppercase tracking-tighter text-gray-800">Sales Records</h3>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow border border-gray-100 mb-6">
+                    <h4 class="font-black text-gray-800 mb-4">Record Deal</h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <select id="sale-form-unit" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none"></select>
+                        <input id="sale-form-price" placeholder="Cash Price" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
+                        <input id="sale-form-dp" placeholder="DP" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
+                        <select id="sale-form-payment-type" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none">
+                            <option value="Installment" selected>Installment</option>
+                            <option value="Full Payment Cash">Full Payment Cash</option>
+                        </select>
+                        <input id="sale-form-customer-name" placeholder="Customer Full Name" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-2" type="text">
+                        <input id="sale-form-customer-contact" placeholder="Customer Contact (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="text">
+                        <input id="sale-form-customer-address" placeholder="Customer Address (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-3" type="text">
+                        <button onclick="saveDeal()" class="bg-blue-600 text-white text-[10px] px-4 py-3 rounded-lg font-bold md:col-span-3">Save Deal</button>
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-3">On save, unit will be set to Unavailable and a receipt will be marked as DONE (with done date) and stored in history.</p>
+                </div>
+
+                <div id="receipt-modal" class="hidden fixed inset-0 z-[60] bg-black/60">
+                    <div class="flex items-center justify-center h-full px-4">
+                        <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                            <div class="bg-blue-950 text-white p-4 flex items-center justify-between">
+                                <div class="font-black uppercase tracking-widest text-sm">RECEIPT (DONE DEAL)</div>
+                                <button onclick="closeReceiptModal()" class="text-white/80 hover:text-white font-bold">✕</button>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Receipt ID</span><span id="rcpt-id" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Customer</span><span id="rcpt-customer" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Unit</span><span id="rcpt-unit" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Payment Type</span><span id="rcpt-payment" class="font-black text-gray-900"></span></div>
+                                </div>
+
+                                <div class="mt-5 border-t pt-4 space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Cash Price</span><span id="rcpt-price" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">DP</span><span id="rcpt-dp" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">TOTAL</span><span id="rcpt-total" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Done Date</span><span id="rcpt-date" class="font-black text-gray-900"></span></div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button onclick="closeReceiptModal()" class="bg-blue-600 text-white text-[10px] px-4 py-2 rounded-lg font-bold">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sales Module -->
+            <section id="module-sales" class="admin-module hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-black uppercase tracking-tighter text-gray-800">Sales Records</h3>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow border border-gray-100 mb-6">
+                    <h4 class="font-black text-gray-800 mb-4">Record Deal</h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <select id="sale-form-unit" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none"></select>
+                        <input id="sale-form-price" placeholder="Cash Price" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
+                        <input id="sale-form-dp" placeholder="DP" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="number">
+                        <select id="sale-form-payment-type" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none">
+                            <option value="Installment" selected>Installment</option>
+                            <option value="Full Payment Cash">Full Payment Cash</option>
+                        </select>
+                        <input id="sale-form-customer-name" placeholder="Customer Full Name" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-2" type="text">
+                        <input id="sale-form-customer-contact" placeholder="Customer Contact (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" type="text">
+                        <input id="sale-form-customer-address" placeholder="Customer Address (optional)" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none md:col-span-3" type="text">
+                        <button onclick="saveDeal()" class="bg-blue-600 text-white text-[10px] px-4 py-3 rounded-lg font-bold md:col-span-3">Save Deal</button>
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-3">On save, unit will be set to Unavailable and a receipt will be marked as DONE (with done date) and stored in history.</p>
+                </div>
+
+                <div id="receipt-modal" class="hidden fixed inset-0 z-[60] bg-black/60">
+                    <div class="flex items-center justify-center h-full px-4">
+                        <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                            <div class="bg-blue-950 text-white p-4 flex items-center justify-between">
+                                <div class="font-black uppercase tracking-widest text-sm">RECEIPT (DONE DEAL)</div>
+                                <button onclick="closeReceiptModal()" class="text-white/80 hover:text-white font-bold">✕</button>
+                            </div>
+                            <div class="p-6">
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Receipt ID</span><span id="rcpt-id" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Customer</span><span id="rcpt-customer" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Unit</span><span id="rcpt-unit" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Payment Type</span><span id="rcpt-payment" class="font-black text-gray-900"></span></div>
+                                </div>
+
+                                <div class="mt-5 border-t pt-4 space-y-2 text-sm">
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Cash Price</span><span id="rcpt-price" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">DP</span><span id="rcpt-dp" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">TOTAL</span><span id="rcpt-total" class="font-black text-gray-900"></span></div>
+                                    <div class="flex justify-between"><span class="font-bold text-gray-500">Done Date</span><span id="rcpt-date" class="font-black text-gray-900"></span></div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button onclick="closeReceiptModal()" class="bg-blue-600 text-white text-[10px] px-4 py-2 rounded-lg font-bold">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
 
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                     <table class="w-full text-left border-collapse text-sm">
@@ -204,6 +433,7 @@
                                 <th class="p-4">DP</th>
                                 <th class="p-4">TOTAL</th>
                                 <th class="p-4">DATE</th>
+                                <th class="p-4 text-right">ACTION</th>
                             </tr>
                         </thead>
                         <tbody id="sales-table"></tbody>
@@ -253,6 +483,161 @@
             </section>
 
             <!-- Payroll Module -->
+            <section id="module-installments" class="admin-module hidden">
+
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-black uppercase tracking-tighter text-gray-800">Installments (Admin)</h3>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow border border-gray-100 mb-6">
+                    <h4 class="font-black text-gray-800 mb-2">This Month Installment Monitoring</h4>
+                    <p class="text-xs text-gray-500">Auto-detected based on current month. Records show per customer/unit, including Due Date and Paid Date for this month.</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 font-bold border-b">
+                                <th class="p-4">CUSTOMER</th>
+                                <th class="p-4">UNIT</th>
+                                <th class="p-4">THIS MONTH STATUS</th>
+                                <th class="p-4">DUE DATE (THIS MONTH)</th>
+                                <th class="p-4">PAID DATE (THIS MONTH)</th>
+                                <th class="p-4">END DATE</th>
+                                <th class="p-4 text-right">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="installments-table"></tbody>
+                    </table>
+                </div>
+
+                <div id="installment-payment-modal" class="hidden fixed inset-0 z-[70] bg-black/60">
+                    <div class="flex items-center justify-center h-full px-4">
+                        <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                            <div class="bg-blue-950 text-white p-4 flex items-center justify-between">
+                                <div class="font-black uppercase tracking-widest text-sm">Record Installment Payment</div>
+                                <button onclick="closeInstallmentPaymentModal()" class="text-white/80 hover:text-white font-bold">✕</button>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Customer</div>
+                                        <div id="ipm-customer" class="font-black text-gray-900"></div>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Unit</div>
+                                        <div id="ipm-unit" class="font-black text-gray-900"></div>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">For Month</div>
+                                        <div id="ipm-for-month" class="font-black text-gray-900"></div>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Expected Monthly Amount</div>
+                                        <div id="ipm-expected" class="font-black text-gray-900"></div>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Due Date</div>
+                                        <div id="ipm-due-date" class="font-black text-gray-900"></div>
+                                    </div>
+
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-bold text-gray-600 mb-1">Amount (₱)</label>
+                                        <input id="ipm-amount" type="number" step="1" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" />
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-bold text-gray-600 mb-1">Paid At (date)</label>
+                                        <input id="ipm-paid-at" type="date" class="w-full p-3 bg-gray-50 border rounded-lg text-sm outline-none" />
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex gap-2 justify-end">
+                                    <button onclick="submitInstallmentPayment()" class="bg-blue-600 text-white text-[10px] px-4 py-2 rounded-lg font-bold">Save Payment</button>
+                                    <button onclick="closeInstallmentPaymentModal()" class="bg-gray-200 text-gray-800 text-[10px] px-4 py-2 rounded-lg font-bold">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="installment-profile-modal" class="hidden fixed inset-0 z-[80] bg-black/60">
+                    <div class="flex items-center justify-center h-full px-4">
+                        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                            <div class="bg-blue-950 text-white p-4 flex items-center justify-between">
+                                <div class="font-black uppercase tracking-widest text-sm">Installment Profile</div>
+                                <button onclick="closeInstallmentProfileModal()" class="text-white/80 hover:text-white font-bold">✕</button>
+                            </div>
+
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Customer</div>
+                                        <div id="iprof-customer" class="font-black text-gray-900"></div>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Unit</div>
+                                        <div id="iprof-unit" class="font-black text-gray-900"></div>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Term Months</div>
+                                        <div id="iprof-term" class="font-black text-gray-900"></div>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div class="text-xs font-bold text-gray-500">Monthly Amount</div>
+                                        <div id="iprof-monthly" class="font-black text-gray-900"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-black text-gray-800">Monthly Records</h4>
+                                        <span id="iprof-paid-summary" class="text-xs font-bold text-gray-600"></span>
+                                    </div>
+
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left border-collapse text-sm">
+                                            <thead>
+                                                <tr class="bg-gray-50 text-gray-500 font-bold border-b">
+                                                    <th class="p-3">MONTH</th>
+                                                    <th class="p-3">STATUS</th>
+                                                    <th class="p-3">PAID DATE</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="iprof-months-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div class="text-xs font-bold text-gray-600">Ilang months pa ang babayaran?</div>
+                                            <div id="iprof-remaining-hint" class="text-[11px] text-gray-500 mt-1"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                                        <div class="md:col-span-2">
+                                            <select id="iprof-months-to-pay" class="w-full p-3 bg-white border rounded-lg text-sm outline-none"></select>
+                                        </div>
+                                        <div>
+                                            <button onclick="applyMonthsToPay()" class="w-full bg-blue-600 text-white text-[10px] px-4 py-3 rounded-lg font-bold hover:bg-orange-500 transition">Apply</button>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-[11px] text-gray-500 mt-2">Next unpaid months will be marked as PAID. Paid date will be today.</p>
+                                </div>
+
+                                <div class="mt-6 flex justify-end">
+                                    <button onclick="closeInstallmentProfileModal()" class="bg-gray-200 text-gray-800 text-[10px] px-4 py-2 rounded-lg font-bold">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
             <section id="module-payroll" class="admin-module hidden">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-black uppercase tracking-tighter text-gray-800">Payroll Records</h3>
@@ -307,7 +692,8 @@
             inventory: 'balasan_moto_db',
             sales: 'balasan_moto_sales_db',
             employees: 'balasan_moto_employees_db',
-            payroll: 'balasan_moto_payroll_db'
+            payroll: 'balasan_moto_payroll_db',
+            installments: 'balasan_moto_installments_db'
         };
 
         function initLocalStorage() {
@@ -322,6 +708,9 @@
             }
             if (!localStorage.getItem(LS.payroll)) {
                 localStorage.setItem(LS.payroll, JSON.stringify([]));
+            }
+            if (!localStorage.getItem(LS.installments)) {
+                localStorage.setItem(LS.installments, JSON.stringify([]));
             }
         }
 
@@ -340,8 +729,13 @@
 
             document.getElementById('tab-inventory').className = 'admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition';
             document.getElementById('tab-sales').className = 'admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition';
+            const tabInstallments = document.getElementById('tab-installments');
+            if (tabInstallments) tabInstallments.className = 'admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition';
+            const tabCustomers = document.getElementById('tab-customers');
+            if (tabCustomers) tabCustomers.className = 'admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition';
             document.getElementById('tab-employees').className = 'admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition';
             document.getElementById('tab-payroll').className = 'admin-tab bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition';
+
 
             const tab = document.getElementById('tab-' + moduleName);
             if (tab) tab.className = 'admin-tab bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-500 transition';
@@ -462,49 +856,202 @@
             });
         }
 
-        window.saveSale = function() {
+        function closeReceiptModal() {
+            const modal = document.getElementById('receipt-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        window.viewReceiptBySaleId = function(saleId) {
+            const salesDb = getSales();
+            const sale = salesDb.find(s => String(s.saleId) === String(saleId));
+            if (!sale) return alert('Receipt/sale not found.');
+
+            const unitName = sale.unitName || '(No Unit)';
+            const customerName = sale.customer?.name || '(No Customer Name)';
+            const paymentType = sale.paymentType || '';
+
+            // Fill monospace receipt UI
+            const receiptNo = sale.receiptId || '';
+            const receiptDateStr = sale.soldAt ? new Date(sale.soldAt).toLocaleString() : (sale.doneAt ? new Date(sale.doneAt).toLocaleString() : '');
+
+            const priceStr = sale.price || '';
+            const dpStr = sale.dp || '';
+            const totalStr = sale.total || '';
+
+            const receiptItemsHtml = `
+                <div>
+                    <div>${unitName}</div>
+                    <div>${priceStr}</div>
+                </div>
+            `;
+
+            const elDate = document.getElementById('receipt-date');
+            const elItems = document.getElementById('receipt-items');
+            const elTotal = document.getElementById('receipt-total');
+            const elNo = document.getElementById('receipt-no');
+            const elCustomer = document.getElementById('receipt-customer');
+            const elPayment = document.getElementById('receipt-payment');
+
+            if (elDate) elDate.textContent = receiptDateStr;
+            if (elItems) elItems.innerHTML = receiptItemsHtml;
+            if (elTotal) elTotal.innerHTML = `<span>Total</span><span>${totalStr}</span>`;
+            if (elNo) elNo.textContent = receiptNo;
+            if (elCustomer) elCustomer.textContent = customerName;
+            if (elPayment) elPayment.textContent = paymentType + (sale.paymentType === 'Installment' && dpStr ? ` (DP: ${dpStr})` : '');
+
+            // show receipt
+            const modal = document.getElementById('receipt-modal');
+            if (modal) modal.classList.remove('hidden');
+        };
+
+        window.saveDeal = function() {
             const unitId = document.getElementById('sale-form-unit').value;
             const price = document.getElementById('sale-form-price').value;
             const dp = document.getElementById('sale-form-dp').value;
-            const buyer = document.getElementById('sale-form-buyer').value.trim();
+            const paymentType = document.getElementById('sale-form-payment-type')?.value || 'Installment';
+
+            const termMonthsEl = document.getElementById('sale-form-installment-term-months');
+            const termMonths = termMonthsEl ? Number(termMonthsEl.value) : 0;
+
+            const customerName = document.getElementById('sale-form-customer-name')?.value?.trim() || '';
+            const customerContact = document.getElementById('sale-form-customer-contact')?.value?.trim() || '';
+            const customerAddress = document.getElementById('sale-form-customer-address')?.value?.trim() || '';
 
             if (!unitId) return alert('Select a unit.');
             if (!price || Number(price) <= 0) return alert('Cash price is required.');
-            if (!dp || Number(dp) < 0) return alert('DP is required.');
+
+            const normalizedPaymentType = paymentType;
+            const dpNum = Number(dp) || 0;
+
+            if (normalizedPaymentType === 'Installment') {
+                if (!dp || Number(dp) < 0) return alert('DP is required for installment.');
+                if (!termMonths || Number(termMonths) <= 0) return alert('Installment term (months) is required for installment.');
+            }
 
             const inv = getInventory();
             const idx = inv.findIndex(u => String(u.id) === String(unitId));
             if (idx === -1) return alert('Unit not found.');
             if (inv[idx].status !== 'Available') return alert('Selected unit is not available.');
 
-            const total = Number(price) ;
-            const salesDb = getSales();
-            const saleId = (salesDb.reduce((m, x) => Math.max(m, Number(x.saleId) || 0), 0) + 1);
+            const totalNum = Number(price);
+            const receiptId = 'RCPT-' + String(Date.now());
+            const doneAt = new Date().toISOString();
 
-            salesDb.push({
-                saleId,
+            const salesDb = getSales();
+            const nextSaleId = (salesDb.reduce((m, x) => Math.max(m, Number(x.saleId) || 0), 0) + 1);
+
+            const saleRecord = {
+                saleId: nextSaleId,
+                receiptId,
+                dealStatus: 'DONE',
+                doneAt,
+
+                paymentType: normalizedPaymentType,
+                customer: {
+                    name: customerName || null,
+                    contact: customerContact || null,
+                    address: customerAddress || null
+                },
+
                 unitId: inv[idx].id,
                 unitName: inv[idx].name,
-                buyerName: buyer || null,
-                price: formatMoney(price),
-                dp: formatMoney(dp),
-                total: formatMoney(total),
-                soldAt: new Date().toISOString(),
+
+                price: formatMoney(totalNum),
+                dp: formatMoney(normalizedPaymentType === 'Installment' ? dpNum : 0),
+                total: formatMoney(totalNum),
+
+                soldAt: doneAt,
                 createdAt: new Date().toISOString()
-            });
+            };
+
+            salesDb.push(saleRecord);
             setSales(salesDb);
+
+            // Create installment plan (Installment only)
+            if (normalizedPaymentType === 'Installment') {
+                const totalNum = Number(price);
+                const dpNumLocal = dpNum;
+                const expectedMonthly = termMonths > 0 ? (totalNum - dpNumLocal) / termMonths : 0;
+                const plans = getInstallmentsPlans();
+                const planId = 'IP-' + String(Date.now());
+
+                plans.push({
+                    planId,
+                    saleId: nextSaleId,
+                    customer: { name: customerName || null, contact: customerContact || null, address: customerAddress || null },
+                    unitId: inv[idx].id,
+                    unitName: inv[idx].name,
+                    totalNum,
+                    dpNum: dpNumLocal,
+                    termMonths: Number(termMonths),
+                    monthlyAmountNum: expectedMonthly,
+                    saleDoneAtISO: doneAt,
+                    payments: [],
+                    createdAt: new Date().toISOString()
+                });
+                setInstallmentsPlans(plans);
+            }
 
             // Update inventory status
             inv[idx].status = 'Unavailable';
             setInventory(inv);
 
+            // show receipt
+            const modal = document.getElementById('receipt-modal');
+            if (modal) modal.classList.remove('hidden');
+
+            // Fill new monospace receipt modal
+            const receiptDateStr = new Date(doneAt).toLocaleString();
+            const receiptTotalStr = formatMoney(totalNum);
+            const receiptDpStr = formatMoney(normalizedPaymentType === 'Installment' ? dpNum : 0);
+            const rcpt = {
+                'receipt-date': receiptDateStr,
+                'receipt-items': `<div><div>${inv[idx].name}</div><div>₱${totalNum}</div></div>`,
+                'receipt-total': `<span>Total</span><span>${receiptTotalStr}</span>`,
+                'receipt-no': receiptId,
+                'receipt-customer': customerName || '(No Customer Name)',
+                'receipt-payment': normalizedPaymentType + (normalizedPaymentType === 'Installment' ? ` (DP: ${receiptDpStr})` : '')
+            };
+
+            Object.entries(rcpt).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (id === 'receipt-total') {
+                    el.innerHTML = val;
+                } else if (id === 'receipt-items') {
+                    el.innerHTML = val;
+                } else {
+                    el.textContent = val;
+                }
+            });
+
             // clear inputs
             document.getElementById('sale-form-price').value = '';
             document.getElementById('sale-form-dp').value = '';
-            document.getElementById('sale-form-buyer').value = '';
+            const n = document.getElementById('sale-form-customer-name');
+            const c = document.getElementById('sale-form-customer-contact');
+            const a = document.getElementById('sale-form-customer-address');
+            if (n) n.value = '';
+            if (c) c.value = '';
+            if (a) a.value = '';
 
             render();
         }
+
+        // Backward compatibility (old button, if any)
+        window.saveSale = function() {
+            // Map old buyer input (if exists) to customer name
+            const buyerEl = document.getElementById('sale-form-buyer');
+            if (buyerEl) {
+                const n = document.getElementById('sale-form-customer-name');
+                if (n && !n.value) n.value = buyerEl.value;
+            }
+            // Use current payment type selection if present
+            const paySel = document.getElementById('sale-form-payment-type');
+            if (paySel && !paySel.value) paySel.value = 'Installment';
+            window.saveDeal();
+        }
+
 
         // Employees module
         window.saveEmployee = function() {
@@ -686,7 +1233,374 @@
                 });
         }
 
+        // =========================
+        // Installments logic
+        // =========================
+        function getInstallmentsPlans() {
+            return JSON.parse(localStorage.getItem(LS.installments) || '[]');
+        }
+        function setInstallmentsPlans(db) {
+            localStorage.setItem(LS.installments, JSON.stringify(db));
+        }
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function toMonthKey(d) {
+            return d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+        }
+
+        function addMonthsToDate(dateISO, monthsToAdd) {
+            const d = new Date(dateISO);
+            const target = new Date(d.getTime());
+            target.setMonth(target.getMonth() + monthsToAdd);
+            return target;
+        }
+
+        function formatDateForInput(isoOrDate) {
+            const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
+            const yyyy = d.getFullYear();
+            const mm = pad2(d.getMonth() + 1);
+            const dd = pad2(d.getDate());
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function getDueDateForMonth(saleDoneAtISO, forMonthKey) {
+            // Due Date each month = same day-of-month as sale done date
+            // forMonthKey = YYYY-MM
+            const [yyyyS, mmS] = String(forMonthKey).split('-');
+            const yyyy = Number(yyyyS);
+            const mm = Number(mmS) - 1;
+            const saleD = new Date(saleDoneAtISO);
+            const day = saleD.getDate();
+
+            const due = new Date(yyyy, mm, day, 0, 0, 0, 0);
+            // If day overflowed (e.g. 31st in shorter month), JS rolls into next month.
+            // Clamp to last day of target month.
+            if (due.getMonth() !== mm) {
+                // last day of month = day 0 of next month
+                return new Date(yyyy, mm + 1, 0, 0, 0, 0, 0);
+            }
+            return due;
+        }
+
+        function moneyMaybe(n) {
+            const x = Number(n);
+            return Number.isFinite(x) ? x : 0;
+        }
+
+        function renderInstallmentsTable() {
+            const table = document.getElementById('installments-table');
+            if (!table) return;
+
+            const plans = getInstallmentsPlans();
+            const now = new Date();
+            const thisMonthKey = toMonthKey(now);
+
+            // plans record shape (stored in localStorage):
+            // {
+            //   planId, saleId, customer, unitName, unitId,
+            //   totalNum, dpNum, termMonths, monthlyAmountNum,
+            //   saleDoneAtISO,
+            //   payments: [{ forMonth, amountNum, paidAtISO }]
+            // }
+
+            const rows = plans.slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+            table.innerHTML = '';
+
+            if (rows.length === 0) {
+                table.innerHTML = '<tr><td class="p-4 text-center text-sm text-gray-500" colspan="7">No installment plans yet.</td></tr>';
+                return;
+            }
+
+            rows.forEach(p => {
+                const dueDate = getDueDateForMonth(p.saleDoneAtISO, thisMonthKey);
+                const dueDateStr = dueDate ? dueDate.toLocaleDateString() : '';
+
+                const paymentForMonth = (p.payments || []).find(x => String(x.forMonth) === String(thisMonthKey));
+                const paidAtISO = paymentForMonth ? paymentForMonth.paidAtISO : null;
+                const paidDateStr = paidAtISO ? new Date(paidAtISO).toLocaleDateString() : '';
+
+                const today = new Date();
+                const dueTime = dueDate.getTime();
+                const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+
+                let status = 'DUE';
+                let statusColor = 'bg-yellow-100 text-yellow-800';
+
+                if (paymentForMonth) {
+                    if (new Date(paidAtISO).getTime() > dueTime) {
+                        status = 'LATE PAID';
+                        statusColor = 'bg-red-100 text-red-800';
+                    } else {
+                        status = 'PAID';
+                        statusColor = 'bg-green-100 text-green-800';
+                    }
+                } else {
+                    if (todayTime > dueTime) {
+                        status = 'DELAYED';
+                        statusColor = 'bg-red-100 text-red-800';
+                    } else {
+                        status = 'DUE';
+                        statusColor = 'bg-yellow-100 text-yellow-800';
+                    }
+                }
+
+                const endDate = addMonthsToDate(p.saleDoneAtISO, (p.termMonths - 1));
+                const endDateStr = endDate ? endDate.toLocaleDateString() : '';
+
+                table.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-4 font-bold text-blue-900">${p.customer?.name || '(No Customer)'}</td>
+                        <td class="p-4 text-xs font-bold text-gray-600">${p.unitName || '(No Unit)'}</td>
+                        <td class="p-4">
+                            <span class="text-[10px] font-black px-2 py-1 rounded ${statusColor}">${status}</span>
+                        </td>
+                        <td class="p-4 text-xs font-bold text-gray-600">${dueDateStr}</td>
+                        <td class="p-4 text-xs font-bold text-gray-600">${paidDateStr || '-'}</td>
+                        <td class="p-4 text-xs font-bold text-gray-600">${endDateStr}</td>
+                        <td class="p-4 text-right">
+                            <div class="flex gap-2 justify-end">
+                                <button
+                                    onclick="openInstallmentProfileModal('${p.planId}')"
+                                    class="bg-gray-200 text-gray-800 text-[10px] px-3 py-1 rounded font-bold">
+                                    View Profile
+                                </button>
+                                <button
+                                    onclick="openInstallmentPaymentModal('${p.planId}', '${thisMonthKey}')"
+                                    class="bg-blue-600 text-white text-[10px] px-3 py-1 rounded font-bold">
+                                    Record Payment
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.openInstallmentPaymentModal = function(planId, forMonthKey) {
+            const plans = getInstallmentsPlans();
+            const plan = plans.find(x => String(x.planId) === String(planId));
+            if (!plan) return alert('Installment plan not found.');
+
+            const dueDate = getDueDateForMonth(plan.saleDoneAtISO, forMonthKey);
+
+            const modal = document.getElementById('installment-payment-modal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+
+            document.getElementById('ipm-customer').textContent = plan.customer?.name || '(No Customer)';
+            document.getElementById('ipm-unit').textContent = plan.unitName || '(No Unit)';
+            document.getElementById('ipm-for-month').textContent = forMonthKey;
+            document.getElementById('ipm-expected').textContent = formatMoney(plan.monthlyAmountNum);
+            document.getElementById('ipm-due-date').textContent = dueDate.toLocaleDateString();
+
+            document.getElementById('ipm-amount').value = moneyMaybe(plan.monthlyAmountNum);
+            document.getElementById('ipm-paid-at').value = formatDateForInput(new Date());
+
+            // store context on window
+            window.__ipm_ctx = { planId, forMonthKey };
+        }
+
+        window.closeInstallmentPaymentModal = function() {
+            const modal = document.getElementById('installment-payment-modal');
+            if (modal) modal.classList.add('hidden');
+            window.__ipm_ctx = null;
+        }
+
+        function recordInstallmentPayment(planId, forMonth, amountNum, paidAtISO) {
+            const plans = getInstallmentsPlans();
+            const idx = plans.findIndex(x => String(x.planId) === String(planId));
+            if (idx === -1) return alert('Installment plan not found.');
+
+            const plan = plans[idx];
+            if (!plan.payments) plan.payments = [];
+
+            const existingIdx = plan.payments.findIndex(x => String(x.forMonth) === String(forMonth));
+            const event = { forMonth, amountNum, paidAtISO };
+
+            // For simplicity: 1 payment per month per plan (overwrite latest)
+            if (existingIdx >= 0) {
+                plan.payments[existingIdx] = event;
+            } else {
+                plan.payments.push(event);
+            }
+
+            plans[idx] = plan;
+            setInstallmentsPlans(plans);
+        }
+
+        window.submitInstallmentPayment = function() {
+            const ctx = window.__ipm_ctx;
+            if (!ctx) return;
+
+            const amount = Number(document.getElementById('ipm-amount').value);
+            if (!Number.isFinite(amount) || amount <= 0) return alert('Enter a valid payment amount.');
+
+            const paidAtDateStr = document.getElementById('ipm-paid-at').value; // YYYY-MM-DD
+            if (!paidAtDateStr) return alert('Paid date is required.');
+            const paidAtISO = new Date(paidAtDateStr + 'T00:00:00').toISOString();
+
+            recordInstallmentPayment(ctx.planId, ctx.forMonthKey, amount, paidAtISO);
+            window.closeInstallmentPaymentModal();
+            renderInstallmentsTable();
+        }
+
+        // =========================
+        // Installment Profile (Paid Months + Multi-month Apply)
+        // =========================
+        window.openInstallmentProfileModal = function(planId) {
+            const plans = getInstallmentsPlans();
+            const plan = plans.find(x => String(x.planId) === String(planId));
+            if (!plan) return alert('Installment plan not found.');
+
+            const modal = document.getElementById('installment-profile-modal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+
+            window.__iprof_planId = planId;
+
+            const customerName = plan.customer?.name || '(No Customer)';
+            const unitName = plan.unitName || '(No Unit)';
+            const termMonths = Number(plan.termMonths) || 0;
+            const monthlyAmount = moneyMaybe(plan.monthlyAmountNum);
+
+            document.getElementById('iprof-customer').textContent = customerName;
+            document.getElementById('iprof-unit').textContent = unitName;
+            document.getElementById('iprof-term').textContent = String(termMonths);
+            document.getElementById('iprof-monthly').textContent = formatMoney(monthlyAmount);
+
+            const saleDoneAtISO = plan.saleDoneAtISO;
+
+            // Build month keys from sale month for termMonths
+            const saleD = new Date(saleDoneAtISO);
+            const monthsKeys = [];
+            for (let i = 0; i < termMonths; i++) {
+                const d = new Date(saleD.getFullYear(), saleD.getMonth() + i, 1);
+                monthsKeys.push(toMonthKey(d));
+            }
+
+            const payments = plan.payments || [];
+            const paidByMonth = new Map();
+            payments.forEach(evt => {
+                if (!evt || !evt.forMonth) return;
+                paidByMonth.set(String(evt.forMonth), evt);
+            });
+
+            const paidCount = monthsKeys.filter(mk => paidByMonth.has(String(mk))).length;
+            document.getElementById('iprof-paid-summary').textContent = paidCount + ' / ' + termMonths + ' paid';
+
+            const tbody = document.getElementById('iprof-months-body');
+            tbody.innerHTML = '';
+
+            monthsKeys.forEach(mk => {
+                const payment = paidByMonth.get(String(mk));
+                const paidAtISO = payment?.paidAtISO || null;
+                const paidDateStr = paidAtISO ? new Date(paidAtISO).toLocaleDateString() : '';
+
+                let status = payment ? 'PAID' : 'UNPAID';
+                let statusColor = 'bg-yellow-100 text-yellow-800';
+                if (payment) statusColor = 'bg-green-100 text-green-800';
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 text-xs font-bold text-gray-700">${mk}</td>
+                        <td class="p-3">
+                            <span class="text-[10px] font-black px-2 py-1 rounded ${statusColor}">${status}</span>
+                        </td>
+                        <td class="p-3 text-xs font-bold text-gray-600">${paidDateStr || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            const remaining = termMonths - paidCount;
+            const hint = document.getElementById('iprof-remaining-hint');
+            hint.textContent = remaining > 0 ? (String(remaining) + ' months remaining') : 'All months paid.';
+
+            const sel = document.getElementById('iprof-months-to-pay');
+            sel.innerHTML = '';
+
+            if (remaining <= 0) {
+                const opt = document.createElement('option');
+                opt.value = '0';
+                opt.textContent = '0 (no remaining months)';
+                sel.appendChild(opt);
+                sel.disabled = true;
+            } else {
+                sel.disabled = false;
+                for (let count = 1; count <= remaining; count++) {
+                    const opt = document.createElement('option');
+                    opt.value = String(count);
+                    opt.textContent = String(count) + ' month(s)';
+                    sel.appendChild(opt);
+                }
+                sel.value = '1';
+            }
+        }
+
+        window.closeInstallmentProfileModal = function() {
+            const modal = document.getElementById('installment-profile-modal');
+            if (modal) modal.classList.add('hidden');
+            window.__iprof_planId = null;
+        }
+
+        window.applyMonthsToPay = function() {
+            const planId = window.__iprof_planId;
+            if (!planId) return;
+
+            const countSel = document.getElementById('iprof-months-to-pay');
+            const count = Number(countSel?.value || 0);
+            if (!Number.isFinite(count) || count <= 0) return alert('Select number of months to pay.');
+
+            const plans = getInstallmentsPlans();
+            const idx = plans.findIndex(x => String(x.planId) === String(planId));
+            if (idx === -1) return alert('Installment plan not found.');
+
+            const plan = plans[idx];
+            const termMonths = Number(plan.termMonths) || 0;
+            const saleDoneAtISO = plan.saleDoneAtISO;
+            const todayISO = new Date().toISOString();
+
+            // Build month keys
+            const saleD = new Date(saleDoneAtISO);
+            const monthsKeys = [];
+            for (let i = 0; i < termMonths; i++) {
+                const d = new Date(saleD.getFullYear(), saleD.getMonth() + i, 1);
+                monthsKeys.push(toMonthKey(d));
+            }
+
+            if (!plan.payments) plan.payments = [];
+
+            const paidSet = new Set((plan.payments || []).map(p => String(p.forMonth)));
+
+            // Determine next unpaid months in chronological order
+            const unpaid = monthsKeys.filter(mk => !paidSet.has(String(mk)));
+            if (unpaid.length <= 0) return alert('No remaining unpaid months.');
+            if (count > unpaid.length) return alert('Selected months exceed remaining unpaid months.');
+
+            // Record for next N unpaid months
+            const amountNum = moneyMaybe(plan.monthlyAmountNum);
+            for (let i = 0; i < count; i++) {
+                const forMonth = unpaid[i];
+                const existingIdx = plan.payments.findIndex(x => String(x.forMonth) === String(forMonth));
+                const event = { forMonth, amountNum, paidAtISO: todayISO };
+                if (existingIdx >= 0) {
+                    plan.payments[existingIdx] = event;
+                } else {
+                    plan.payments.push(event);
+                }
+            }
+
+            plans[idx] = plan;
+            setInstallmentsPlans(plans);
+
+            // Refresh UI: close + rerender installments table and profile content
+            window.closeInstallmentProfileModal();
+            renderInstallmentsTable();
+        }
+
+        // =========================
         // Rendering
+        // =========================
+
         function render() {
             // Home grid
             const inv = getInventory();
@@ -752,7 +1666,7 @@
                 salesTable.innerHTML = '';
                 const sorted = salesDb.slice().sort((a,b) => (a.soldAt < b.soldAt ? 1 : -1));
                 if (sorted.length === 0) {
-                    salesTable.innerHTML = '<tr><td class="p-4" colspan="5"><span class="text-sm text-gray-500">No sales records yet.</span></td></tr>';
+                    salesTable.innerHTML = '<tr><td class="p-4" colspan="6"><span class="text-sm text-gray-500">No sales records yet.</span></td></tr>';
                 } else {
                     sorted.forEach(s => {
                         const d = s.soldAt ? new Date(s.soldAt) : null;
@@ -764,12 +1678,23 @@
                                 <td class="p-4 text-xs font-bold text-gray-600">${s.dp}</td>
                                 <td class="p-4 text-xs font-black">${s.total}</td>
                                 <td class="p-4 text-xs font-bold text-gray-600">${dateStr}</td>
+                                <td class="p-4 text-right">
+                                    <button onclick="viewReceiptBySaleId('${s.saleId}')" class="bg-blue-600 text-white text-[10px] px-3 py-1 rounded font-bold">View Receipt</button>
+                                </td>
                             </tr>
                         `;
                     });
                 }
             }
             renderSalesUnitDropdown();
+
+            // Installments module
+            const installmentsTable = document.getElementById('installments-table');
+            if (installmentsTable) {
+                renderInstallmentsTable();
+            }
+
+            // Installments helpers are below (render + payment)
 
             // Employees table
             const empTable = document.getElementById('employees-table');
@@ -818,6 +1743,7 @@
         }
 
         window.resetSystem = function() {
+
             if(confirm("Buharin ang lahat ng records sa database?")) {
                 Object.values(LS).forEach(k => localStorage.removeItem(k));
                 location.reload();
